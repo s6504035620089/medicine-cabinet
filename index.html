@@ -3,64 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medicine Cabinet Dashboard</title>
+    <title>Medicine Cabinet - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        body { background: #f4f7f6; font-family: 'Kanit', sans-serif; padding-top: 50px; }
-        .card { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none; }
-        .header-status { color: #2ecc71; font-weight: bold; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; padding-top: 30px; }
+        .main-card { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none; background: white; }
+        .status-dot { height: 12px; width: 12px; background-color: #2ecc71; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .table thead { background-color: #007bff; color: white; }
+        .last-update { font-size: 0.8rem; color: #6c757d; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="card p-4">
-            <h2 class="text-center mb-4">💊 ระบบตรวจสอบการเบิกยา Real-time</h2>
+        <div class="main-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="m-0 text-primary">💊 ระบบจ่ายยาอัจฉริยะ</h2>
+                <div><span class="status-dot"></span> <span class="text-success">ระบบกำลังทำงาน</span></div>
+            </div>
+            
             <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead class="table-primary">
+                <table class="table table-hover">
+                    <thead>
                         <tr>
-                            <th>เวลาล่าสุด</th>
-                            <th>รหัสยา</th>
-                            <th>ช่องเก็บยา</th>
+                            <th>วัน-เวลาที่เบิก</th>
+                            <th>รหัสยา (Barcode)</th>
+                            <th>ตำแหน่ง (Slot)</th>
                         </tr>
                     </thead>
-                    <tbody id="data-table">
-                        <tr><td colspan="3" class="text-center">กำลังโหลดข้อมูล...</td></tr>
+                    <tbody id="medicine-data">
+                        <tr><td colspan="3" class="text-center">กำลังดึงข้อมูลล่าสุด...</td></tr>
                     </tbody>
                 </table>
             </div>
+            <div class="text-end last-update" id="update-time"></div>
         </div>
     </div>
 
     <script>
-        // ใส่ URL ที่ได้จากขั้นตอน Publish to web (.csv) ตรงนี้
-        const csvUrl = 'YOUR_CSV_PUBLISH_URL_HERE';
+        // *** สำคัญ: นำ URL CSV ที่ได้จาก Google Sheets (Publish to web) มาใส่ที่นี่ ***
+        const csvUrl = 'ใส่_URL_CSV_ของคุณตรงนี้';
 
-        async function fetchData() {
+        async function updateDashboard() {
             try {
                 const response = await fetch(csvUrl);
                 const data = await response.text();
-                const rows = data.split('\n').slice(1); // ข้ามหัวตาราง
-                let html = '';
-                
-                rows.forEach(row => {
-                    const cols = row.split(',');
+                const rows = data.split('\n');
+                let tableHtml = '';
+
+                // วนลูปอ่านข้อมูล (ข้ามแถวแรกที่เป็นหัวตาราง)
+                for (let i = 1; i < rows.length; i++) {
+                    const cols = rows[i].split(',');
                     if (cols.length >= 3) {
-                        html += `<tr>
+                        tableHtml += `<tr>
                             <td>${cols[0]}</td>
-                            <td>${cols[1]}</td>
-                            <td>${cols[2]}</td>
+                            <td><strong>${cols[1]}</strong></td>
+                            <td><span class="badge bg-info text-dark">${cols[2]}</span></td>
                         </tr>`;
                     }
-                });
-                document.getElementById('data-table').innerHTML = html;
+                }
+                document.getElementById('medicine-data').innerHTML = tableHtml;
+                document.getElementById('update-time').innerText = "อัปเดตเมื่อ: " + new Date().toLocaleTimeString();
             } catch (error) {
-                console.error('Error:', error);
+                console.error("Error fetching data:", error);
             }
         }
 
-        setInterval(fetchData, 5000); // อัปเดตทุก 5 วินาที
-        fetchData();
+        // อัปเดตข้อมูลทุกๆ 10 วินาที
+        setInterval(updateDashboard, 10000);
+        updateDashboard();
     </script>
 </body>
 </html>
